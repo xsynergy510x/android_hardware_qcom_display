@@ -1235,7 +1235,7 @@ void setMdpFlags(hwc_layer_1_t *layer,
     }
 }
 
-inline int configRotator(Rotator *rot, Whf& whf,
+int configRotator(Rotator *rot, Whf& whf,
         const Whf& origWhf, const eMdpFlags& mdpFlags,
         const eTransform& orient,
         const int& downscale) {
