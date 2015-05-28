@@ -37,6 +37,7 @@
 #define UNLIKELY( exp )     (__builtin_expect( (exp) != 0, false ))
 #define MAX_NUM_APP_LAYERS 32
 #define MAX_DISPLAY_DIM 2048
+#define MAX_MDP_YUV_COUNT 2
 
 //Fwrd decls
 struct hwc_context_t;
@@ -268,7 +269,7 @@ void updateSource(ovutils::eTransform& orient, ovutils::Whf& whf,
         hwc_rect_t& crop);
 
 bool needToForceRotator(hwc_context_t *ctx, const int& dpy,
-         uint32_t w, uint32_t h, int transform);
+         uint32_t w, uint32_t h, int transform, const overlay::utils::eDest& dest);
 
 //Routine to configure low resolution panels (<= 2048 width)
 int configureLowRes(hwc_context_t *ctx, hwc_layer_1_t *layer, const int& dpy,
@@ -295,6 +296,11 @@ static inline bool isYuvBuffer(const private_handle_t* hnd) {
 // Returns true if the buffer is secure
 static inline bool isSecureBuffer(const private_handle_t* hnd) {
     return (hnd && (private_handle_t::PRIV_FLAGS_SECURE_BUFFER & hnd->flags));
+}
+
+// Returns true if the buffer is protected
+static inline bool isProtectedBuffer(const private_handle_t* hnd) {
+    return (hnd && (private_handle_t::PRIV_FLAGS_PROTECTED_BUFFER & hnd->flags));
 }
 
 // Returns true if the buffer is non contiguous
@@ -435,7 +441,7 @@ struct hwc_context_t {
     int mSocId;
     qhwc::LayerRotMap *mLayerRotMap[HWC_NUM_DISPLAY_TYPES];
     //previous Width & Height
-    overlay::utils::Whf mPrevWHF[HWC_NUM_DISPLAY_TYPES];
+    overlay::utils::Whf mPrevWHF[HWC_NUM_DISPLAY_TYPES][MAX_MDP_YUV_COUNT];
     // Panel reset flag will be set if BTA check fails
     bool mPanelResetStatus;
 };

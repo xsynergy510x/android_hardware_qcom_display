@@ -301,7 +301,8 @@ bool MDPComp::isValidDimension(hwc_context_t *ctx, hwc_layer_1_t *layer) {
     }
 
     //XXX: Investigate doing this with pixel phase on MDSS
-    if(!isSecureBuffer(hnd) && isNonIntegralSourceCrop(layer->sourceCropf))
+    if(!isSecureBuffer(hnd) && !isProtectedBuffer(hnd) &&
+            isNonIntegralSourceCrop(layer->sourceCropf))
         return false;
 
     int hw_w = ctx->dpyAttr[mDpy].xres;
@@ -1014,6 +1015,8 @@ bool MDPCompLowRes::allocLayerPipes(hwc_context_t *ctx,
                                     hwc_display_contents_1_t* list) {
     if(isYuvPresent(ctx, mDpy)) {
         int nYuvCount = ctx->listStats[mDpy].yuvCount;
+        eDest yuvIndex[MAX_MDP_YUV_COUNT] = {OV_INVALID, OV_INVALID};
+        int counter = 0;
 
         for(int index = 0; index < nYuvCount ; index ++) {
             int nYuvIndex = ctx->listStats[mDpy].yuvIndices[index];
@@ -1035,6 +1038,17 @@ bool MDPCompLowRes::allocLayerPipes(hwc_context_t *ctx,
                 ALOGD_IF(isDebug(), "%s: Unable to get pipe for Videos",
                          __FUNCTION__);
                 return false;
+            }
+            yuvIndex[counter++] = pipe_info.index;
+        }
+        if(counter == 1) {
+            //Reset the alternative YUV index
+            if(yuvIndex[0]%MAX_MDP_YUV_COUNT) {
+                ctx->mPrevWHF[mDpy][0].w = 0;
+                ctx->mPrevWHF[mDpy][0].h = 0;
+            }else {
+                ctx->mPrevWHF[mDpy][1].w = 0;
+                ctx->mPrevWHF[mDpy][1].h = 0;
             }
         }
     }
@@ -1200,6 +1214,8 @@ bool MDPCompHighRes::allocLayerPipes(hwc_context_t *ctx,
 
     if(isYuvPresent(ctx, mDpy)) {
         int nYuvCount = ctx->listStats[mDpy].yuvCount;
+        eDest yuvIndex[MAX_MDP_YUV_COUNT] = {OV_INVALID, OV_INVALID};
+        int counter = 0;
 
         for(int index = 0; index < nYuvCount; index ++) {
             int nYuvIndex = ctx->listStats[mDpy].yuvIndices[index];
@@ -1214,7 +1230,18 @@ bool MDPCompHighRes::allocLayerPipes(hwc_context_t *ctx,
                 //TODO: windback pipebook data on fail
                 return false;
             }
+            yuvIndex[counter++] = pipe_info.lIndex;
             pipe_info.zOrder = nYuvIndex;
+        }
+        if(counter == 1) {
+            //Reset the alternative YUV index
+            if(yuvIndex[0]%MAX_MDP_YUV_COUNT) {
+                ctx->mPrevWHF[mDpy][0].w = 0;
+                ctx->mPrevWHF[mDpy][0].h = 0;
+            }else {
+                ctx->mPrevWHF[mDpy][1].w = 0;
+                ctx->mPrevWHF[mDpy][1].h = 0;
+            }
         }
     }
 
